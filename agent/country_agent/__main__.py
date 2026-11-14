@@ -3,6 +3,7 @@ import argparse
 import json
 from pathlib import Path
 from .http_api import run
+from .enforcement import restore, apply, load_policy
 from .policy import PolicyValidationError, preview_from_files
 
 
@@ -20,11 +21,22 @@ def main():
     serve_parser.add_argument("--token-file", type=Path, required=True)
     serve_parser.add_argument("--feeds", type=Path, required=True)
     serve_parser.add_argument("--server-id", required=True)
+    serve_parser.add_argument('--state-dir', type=Path)
+    restore_parser = commands.add_parser('restore', help='Restore last confirmed policy at boot')
+    restore_parser.add_argument('--state-dir', type=Path, required=True)
+    refresh_parser = commands.add_parser('refresh', help='Refresh and reinstall selected countries')
+    refresh_parser.add_argument('--state-dir', type=Path, required=True)
     args = parser.parse_args()
 
+    if args.command == "restore":
+        print(json.dumps(restore(args.state_dir)))
+        return 0
+    if args.command == "refresh":
+        print(json.dumps(apply(args.state_dir,load_policy(args.state_dir)["countries"],refresh=True)))
+        return 0
     if args.command == "serve":
         try:
-            run(args.bind, args.port, args.token_file, args.feeds, args.server_id)
+            run(args.bind, args.port, args.token_file, args.feeds, args.server_id, args.state_dir)
         except (ValueError, OSError) as exc:
             parser.exit(2, f"Cannot start preview agent: {exc}\n")
         return 0
