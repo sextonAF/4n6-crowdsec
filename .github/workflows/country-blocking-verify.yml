@@ -28,6 +28,24 @@ jobs:
           version: 12.16.1
       - name: Validate deployment script syntax
         run: bash -n deploy/*.sh scripts/inspect-gigahost-country-firewall.sh
+      - name: Syntax-check embedded Python in deployment scripts
+        run: |
+          python3 - <<'PY'
+          import pathlib
+          for path in pathlib.Path("deploy").glob("*.sh"):
+              lines=path.read_text().splitlines()
+              i=0
+              while i<len(lines):
+                  if "<<'PY'" in lines[i]:
+                      begin=i+1
+                      i=begin
+                      while i<len(lines) and lines[i]!="PY":
+                          i+=1
+                      if i==len(lines):
+                          raise SystemExit(f"{path}: unterminated Python heredoc")
+                      compile("\\n".join(lines[begin:i]),f"{path}:line {begin+1}","exec")
+                  i+=1
+          PY
       - run: pnpm install --frozen-lockfile
       - run: pnpm run typecheck
       - run: pnpm run lint
