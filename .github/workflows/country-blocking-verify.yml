@@ -3,11 +3,13 @@ on:
   push:
     branches:
       - feature/country-blocking
+      - fix/reuse-gigahost-tunnel
   pull_request:
     paths:
       - 'client/**'
       - 'server/**'
       - 'agent/**'
+      - 'deploy/**'
       - 'shared/**'
       - '.github/workflows/country-blocking-verify.yml'
 permissions:
