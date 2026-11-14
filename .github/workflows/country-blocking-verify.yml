@@ -43,7 +43,7 @@ jobs:
                           i+=1
                       if i==len(lines):
                           raise SystemExit(f"{path}: unterminated Python heredoc")
-                      compile("\\n".join(lines[begin:i]),f"{path}:line {begin+1}","exec")
+                      compile("\n".join(lines[begin:i]),f"{path}:line {begin+1}","exec")
                   i+=1
           PY
       - run: pnpm install --frozen-lockfile
