@@ -87,7 +87,9 @@ if any("18083:" in x for x in argv):
 # original argv; preserve all existing keys, host checks, ports, and flags.
 if "-N" not in argv and not any(x.startswith("-N") and len(x)>2 for x in argv):
     raise SystemExit("Existing SSH service is not a pure -N tunnel")
-argv.extend(["-L","172.21.0.1:18083:127.0.0.1:14110"])
+if not argv[-1] or argv[-1].startswith("-"):
+    raise SystemExit("Cannot identify SSH destination")
+argv[-1:-1] = ["-L","172.21.0.1:18083:127.0.0.1:14110"]
 def quote(v):
     return '"' + v.replace("\\", "\\\\").replace('"', '\\"').replace("%","%%").replace("$","$$") + '"'
 content="[Service]\nExecStart=\nExecStart="+" ".join(map(quote,argv))+"\n"
