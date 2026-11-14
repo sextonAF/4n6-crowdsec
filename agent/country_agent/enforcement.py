@@ -39,7 +39,7 @@ def fetch_ranges(code: str, timeout: int = 20):
             if response.status != 200 or response.url != address:
                 raise PolicyValidationError("Unexpected GeoIP source response")
             data = response.read(MAX_DOWNLOAD + 1)
-        result.append(parse_feed(data, version))
+        result.append(parse_feed(data, version, allow_empty=True))
     return tuple(result)
 
 def load_policy(directory: Path):
