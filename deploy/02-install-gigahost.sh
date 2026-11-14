@@ -48,7 +48,12 @@ if [ "$MISSING" -ne 0 ]; then
   echo "Preflight failed. No files, firewall rules, or services changed." >&2
   exit 1
 fi
-echo "All preflight checks passed. Installing to existing account only."
+echo "All preflight checks passed."
+if [ "${1:-}" = "--preflight" ]; then
+  echo "READ-ONLY PREFLIGHT COMPLETE. No changes made."
+  exit 0
+fi
+echo "Installing to existing account only."
 
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 BACKUP="/root/4n6-country-backups/$STAMP"
