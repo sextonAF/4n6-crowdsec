@@ -42,6 +42,14 @@ class NftRenderTests(unittest.TestCase):
         with self.assertRaises(PolicyValidationError):
             render_table({"CN": (parse_feed(b"1.1.1.0/24\n", 4), parse_feed(b"8.8.8.0/24\n", 4))})
 
+    def test_country_without_ipv6_allocation(self):
+        from country_agent.policy import parse_feed
+        policy = {"CN": (parse_feed(b"1.1.1.0/24\\n", 4),
+                         parse_feed(b"# Country: CN\\n", 6, allow_empty=True))}
+        rules = render_table(policy)
+        self.assertIn("ip saddr @blocked_v4 drop", rules)
+        self.assertIn("set blocked_v6", rules)
+
     def test_deduplicates_shared_ranges(self):
         policy = families()
         policy["RU"] = policy["CN"]
