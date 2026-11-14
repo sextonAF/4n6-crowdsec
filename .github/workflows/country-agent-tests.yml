@@ -1,0 +1,29 @@
+name: Country Blocking Agent Tests
+
+on:
+  push:
+    branches:
+      - feature/country-blocking
+    paths:
+      - 'agent/**'
+      - '.github/workflows/country-agent-tests.yml'
+  pull_request:
+    paths:
+      - 'agent/**'
+      - '.github/workflows/country-agent-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-policy-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run offline GeoIP policy unit tests
+        working-directory: agent
+        run: python -m unittest discover -s tests -v
