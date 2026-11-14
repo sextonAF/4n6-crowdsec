@@ -22,7 +22,7 @@ def validate_policy(families: Mapping[str, tuple[FamilyPreview, FamilyPreview]])
     v4, v6 = set(), set()
     for code, (four, six) in families.items():
         validate_country(code)
-        if four.version != 4 or six.version != 6 or not four.cidrs or not six.cidrs:
+        if four.version != 4 or six.version != 6 or (not four.cidrs and not six.cidrs):
             raise PolicyValidationError("Each country requires validated IPv4 and IPv6 ranges")
         for family, preview, target in ((4, four, v4), (6, six, v6)):
             for cidr in preview.cidrs:
@@ -35,8 +35,8 @@ def validate_policy(families: Mapping[str, tuple[FamilyPreview, FamilyPreview]])
                 target.add(network)
         if len(v4) + len(v6) > MAX_TOTAL_NETWORKS:
             raise PolicyValidationError("Country policy exceeds network count limit")
-    if not v4 or not v6:
-        raise PolicyValidationError("Country policy must contain both address families")
+    if not v4 and not v6:
+        raise PolicyValidationError("Country policy contains no public IP ranges")
     return (
         tuple(str(n) for n in sorted(v4, key=lambda n: (int(n.network_address), n.prefixlen))),
         tuple(str(n) for n in sorted(v6, key=lambda n: (int(n.network_address), n.prefixlen))),
