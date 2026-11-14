@@ -103,12 +103,17 @@ YAML
 docker compose -f "$COMPOSE" -f "$BASE/country-override.yaml" config -q
 echo "Stopping Web UI briefly to take a consistent application data backup..."
 docker stop "$CONTAINER" >/dev/null
-docker cp "$CONTAINER:/app/data" "$BACKUP/data"
+if ! docker cp "$CONTAINER:/app/data" "$BACKUP/data"; then
+  docker start "$CONTAINER" >/dev/null || true
+  echo "Data backup failed. Existing UI restarted; deployment aborted." >&2
+  exit 1
+fi
 docker start "$CONTAINER" >/dev/null
 # Apply the image override without altering the original Compose file.
 echo "Deploying customized Web UI..."
 if ! docker compose -f "$COMPOSE" -f "$BASE/country-override.yaml" up -d --no-deps --force-recreate "$SERVICE"; then
-  echo "Deployment failed; restore using the rollback instructions in $BACKUP" >&2
+  echo "Deployment failed; restoring original image and database..." >&2
+  bash "$TMP/repo/deploy/rollback-authentik2.sh" "$BACKUP" || true
   exit 1
 fi
 HEALTHY=0
@@ -117,7 +122,8 @@ for try in $(seq 1 30); do
   sleep 2
 done
 if [ "$HEALTHY" -ne 1 ]; then
-  echo "New dashboard is unhealthy. Run the rollback script with backup $BACKUP" >&2
+  echo "New dashboard unhealthy; restoring original image and database..." >&2
+  bash "$TMP/repo/deploy/rollback-authentik2.sh" "$BACKUP" || true
   exit 1
 fi
 echo "Web UI health OK; dedicated Gigahost agent OK."
