@@ -63,7 +63,7 @@ for account in pwd.getpwall():
         continue
     lines = file.read_text().splitlines(keepends=True)
     for index, line in enumerate(lines):
-        if re.search(r"(^|\\s)ssh-ed25519\\s+"+re.escape(key_data)+r"(\\s|$)",line):
+        if re.search(r"(^|\s)ssh-ed25519\s+"+re.escape(key_data)+r"(\s|$)",line):
             matches.append((file,index,lines))
 if len(matches) != 1:
     raise SystemExit("Expected exactly one existing authorized SSH key on Gigahost; found "+str(len(matches)))
