@@ -69,6 +69,7 @@ import { fetchCrowdsecMetrics, fetchCrowdsecMetricsSamples, summarizeCrowdsecMet
 import { DatabaseQueryWorker, QueryWorkerTimeoutError } from './query-worker-client';
 import { registerApiRoutes } from './app/api-routes';
 import { registerSavedFilterRoutes } from './app/saved-filters';
+import { registerCountryBlockingRoutes } from './app/country-blocking-routes';
 import { registerBrandingRoutes } from './app/branding-routes';
 import { createAllowlistService, registerAllowlistRoutes, type AllowlistService } from './app/allowlists';
 import { applyBrandingToIndexHtml, getPublicBranding, serializeBrandingForScript } from './branding';
@@ -1295,6 +1296,15 @@ export function createApp(options: CreateAppOptions = {}): AppController {
     if (dashboardAuth.getPermissions(context).can_manage_settings) return null;
     return context.json({ error: 'Read-only mode is enabled', code: 'READ_ONLY' }, 403);
   };
+
+  registerCountryBlockingRoutes({
+    app,
+    basePath: config.basePath,
+    ensureAuth,
+    canManage: (context) => dashboardAuth.getPermissions(context).can_manage_enforcement,
+    instances: config.instances.map((instance) => ({id:instance.id,name:instance.name})),
+    agentsFile: process.env.FOURN6_COUNTRY_AGENTS_FILE,
+  });
 
   registerBrandingRoutes({
     app,
