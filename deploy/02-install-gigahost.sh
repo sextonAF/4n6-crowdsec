@@ -3,7 +3,7 @@
 set -euo pipefail
 [ "$(id -u)" -eq 0 ] || { echo "Run as root" >&2; exit 1; }
 [ "$(hostname -s)" = "srv19210" ] || { echo "Wrong host; expected srv19210" >&2; exit 1; }
-for command in git nft python3 systemctl sshd openssl curl; do
+for command in git nft python3 systemctl openssl curl; do
   command -v "$command" >/dev/null || { echo "Missing: $command" >&2; exit 1; }
 done
 nft list table inet opengov_guard >/dev/null
@@ -12,7 +12,7 @@ systemctl is-active --quiet opengov-guard.service
 [ "$(systemctl is-enabled nftables.service 2>/dev/null || true)" = disabled ] || {
   echo "Expected disabled nftables.service: refusing to modify system" >&2; exit 1;
 }
-printf "Paste authentik2 country tunnel PUBLIC key (ssh-ed25519 ...): "
+printf "Paste the EXISTING CrowdSec tunnel PUBLIC key shown by Stage 1: "
 IFS= read -r PUBLIC_KEY
 [[ "$PUBLIC_KEY" =~ ^ssh-ed25519[[:space:]][A-Za-z0-9+/]+={0,3}([[:space:]].*)?$ ]] || {
   echo "Invalid SSH public key" >&2; exit 1;
@@ -29,7 +29,7 @@ if [ -d /opt/4n6-country-agent/app ]; then
 fi
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
-git clone -q --depth 1 --branch feature/country-blocking https://github.com/sextonAF/4n6-crowdsec.git "$TMP/repo"
+git clone -q --depth 1 --branch main https://github.com/sextonAF/4n6-crowdsec.git "$TMP/repo"
 (
   cd "$TMP/repo/agent"
   python3 -m unittest discover -s tests -v
@@ -47,12 +47,54 @@ if [ ! -s /etc/4n6-country-agent/token ]; then
   openssl rand -hex 32 > /etc/4n6-country-agent/token
 fi
 chmod 600 /etc/4n6-country-agent/token
-id crowdsec-country-tunnel >/dev/null 2>&1 || useradd -r -m -d /var/lib/crowdsec-country-tunnel -s /usr/sbin/nologin crowdsec-country-tunnel
-HOME_DIR="$(getent passwd crowdsec-country-tunnel | cut -d: -f6)"
-install -d -m 700 -o crowdsec-country-tunnel -g crowdsec-country-tunnel "$HOME_DIR/.ssh"
-printf 'restrict,port-forwarding,permitopen="127.0.0.1:14110" %s\n' "$PUBLIC_KEY" > "$HOME_DIR/.ssh/authorized_keys"
-chown crowdsec-country-tunnel:crowdsec-country-tunnel "$HOME_DIR/.ssh/authorized_keys"
-chmod 600 "$HOME_DIR/.ssh/authorized_keys"
+# Extend ONLY the matching existing public key's forwarding permission.
+# Keep the existing SSH account and key, preserving prior permitopen entries.
+python3 - "$PUBLIC_KEY" "$BACKUP" <<'PY'
+import os, pathlib, pwd, re, shutil, sys, tempfile
+key_data = sys.argv[1].split()[1]
+backup = pathlib.Path(sys.argv[2])
+matches = []
+for account in pwd.getpwall():
+    home = pathlib.Path(account.pw_dir)
+    if not home.is_absolute() or not home.is_dir():
+        continue
+    file = home / ".ssh" / "authorized_keys"
+    if not file.is_file() or file.is_symlink():
+        continue
+    lines = file.read_text().splitlines(keepends=True)
+    for index, line in enumerate(lines):
+        if re.search(r"(^|\s)ssh-ed25519\s+"+re.escape(key_data)+r"(\s|$)",line):
+            matches.append((file,index,lines))
+if len(matches) != 1:
+    raise SystemExit("Expected exactly one existing authorized SSH key on Gigahost; found "+str(len(matches)))
+file,index,lines=matches[0]
+line=lines[index]
+prefix, marker, suffix = line.partition("ssh-ed25519 ")
+if not marker:
+    raise SystemExit("Authorized key format not recognized")
+options=prefix.strip()
+if options and "permitopen=" in options:
+    if 'permitopen="127.0.0.1:14110"' not in options:
+        prefix=options+',permitopen="127.0.0.1:14110" '
+        lines[index]=prefix+marker+suffix
+        shutil.copy2(file,backup/"authorized_keys.before")
+        st=file.stat()
+        fd,tmp=tempfile.mkstemp(prefix=".authorized_keys-",dir=file.parent)
+        try:
+            with os.fdopen(fd,"w") as out:
+                out.writelines(lines)
+                out.flush()
+                os.fsync(out.fileno())
+            os.chmod(tmp,st.st_mode & 0o777)
+            os.chown(tmp,st.st_uid,st.st_gid)
+            os.replace(tmp,file)
+        finally:
+            if os.path.exists(tmp): os.unlink(tmp)
+elif options and ("restrict" in options or "no-port-forwarding" in options):
+    raise SystemExit("SSH key has restrictions not safely handled automatically; no changes made")
+print("Reusing existing SSH account/key from",file)
+print("Existing CrowdSec port-forward authorization preserved")
+PY
 cat > /etc/systemd/system/4n6-country-agent.service <<'UNIT'
 [Unit]
 Description=4N6 country blocking enforcement agent
