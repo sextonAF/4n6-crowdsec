@@ -53,25 +53,25 @@ class ReadOnlyAgentTests(unittest.TestCase):
         self.assertEqual(self.request("GET", "/v1/status", authenticated=False)[0], 401)
 
     def test_preview_authenticated(self):
-        code, data = self.request("POST", "/v1/preview", {"country": "CN"})
+        code, data = self.request("POST", "/v1/preview", {"countries": ["CN"]})
         self.assertEqual(code, 200)
-        self.assertEqual(data["ipv4"]["cidr_count"], 1)
+        self.assertEqual(data["counts"]["ipv4"], 1)
         self.assertFalse(data["applied"])
 
     def test_preview_rejects_unauthenticated(self):
         self.assertEqual(self.request("POST", "/v1/preview", {"country": "CN"}, False)[0], 401)
 
     def test_preview_rejects_unknown_country(self):
-        self.assertEqual(self.request("POST", "/v1/preview", {"country": "ZZ"})[0], 400)
+        self.assertEqual(self.request("POST", "/v1/preview", {"countries": ["ZZ"]})[0], 400)
 
     def test_preview_rejects_unexpected_fields(self):
-        self.assertEqual(self.request("POST", "/v1/preview", {"country": "CN", "command": "flush"})[0], 400)
+        self.assertEqual(self.request("POST", "/v1/preview", {"countries": ["CN"], "command": "flush"})[0], 400)
 
     def test_other_methods_disabled(self):
         self.assertEqual(self.request("DELETE", "/v1/preview")[0], 405)
 
     def test_missing_feed_does_not_write(self):
-        self.assertEqual(self.request("POST", "/v1/preview", {"country": "RU"})[0], 503)
+        self.assertEqual(self.request("POST", "/v1/preview", {"countries": ["RU"]})[0], 503)
 
     def test_loopback_only(self):
         with self.assertRaises(ValueError):
