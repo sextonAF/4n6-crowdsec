@@ -63,7 +63,11 @@ services:
       - $SECRETS/geo_agents.json:/run/secrets/geo_agents.json:ro
       - $SECRETS/country_agent_token:/run/secrets/country_agent_token:ro
 YAML
-docker compose -f "$COMPOSE" -f "$OVERRIDE" config -q
+if ! docker compose -f "$COMPOSE" -f "$OVERRIDE" config -q; then
+  rm -f "$OVERRIDE"
+  echo "Compose validation failed; original UI unchanged." >&2
+  exit 1
+fi
 restore() {
   echo "Deployment failed: returning to the previously running image and Compose service." >&2
   rm -f "$OVERRIDE"
