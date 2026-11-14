@@ -1,6 +1,6 @@
 """Render isolated nftables country-blocking rules; never executes them.
 
-One table, two interval sets, and a single input chain at priority -30.
+One table, two interval sets, and ingress filters for prerouting and input.
 The kernel rule is intentionally before established-connection acceptance:
 a blocked source is blocked from all inbound local services regardless of port.
 """
@@ -64,6 +64,11 @@ table inet {TABLE} {{
         elements = {{
             {elements(v6)}
         }}
+    }}
+    chain prerouting {{
+        type filter hook prerouting priority -310; policy accept;
+        ip saddr @blocked_v4 drop
+        ip6 saddr @blocked_v6 drop
     }}
     chain input {{
         type filter hook input priority {PRIORITY}; policy accept;
