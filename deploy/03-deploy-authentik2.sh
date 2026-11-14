@@ -76,7 +76,7 @@ TUNNEL_PID="$(systemctl show "$TUNNEL_SERVICE" --value -p MainPID)"
 python3 - "$TUNNEL_PID" "$TUNNEL_DROPIN" <<'PY'
 import os, pathlib, sys
 pid, output = sys.argv[1:]
-argv = [x.decode() for x in pathlib.Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\\0") if x]
+argv = [x.decode() for x in pathlib.Path(f"/proc/{pid}/cmdline").read_bytes().split(b"\0") if x]
 if not argv or os.path.basename(argv[0]) != "ssh":
     raise SystemExit("Existing tunnel executable is not ssh")
 if not any("18082:" in x for x in argv):
@@ -90,7 +90,7 @@ if "-N" not in argv and not any(x.startswith("-N") and len(x)>2 for x in argv):
 argv.extend(["-L","172.21.0.1:18083:127.0.0.1:14110"])
 def quote(v):
     return '"' + v.replace("\\", "\\\\").replace('"', '\\"').replace("%","%%").replace("$","$$") + '"'
-content="[Service]\\nExecStart=\\nExecStart="+" ".join(map(quote,argv))+"\\n"
+content="[Service]\nExecStart=\nExecStart="+" ".join(map(quote,argv))+"\n"
 pathlib.Path(output).write_text(content)
 PY
 # Changes may interrupt the existing tunnel briefly; automatically restore
