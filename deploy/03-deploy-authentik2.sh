@@ -127,13 +127,18 @@ for try in $(seq 1 15); do
   fi
   sleep 2
 done
-python3 - "$BACKUP/agent-status.json" "$INSTANCE_ID" <<'PY'
+if ! python3 - "$BACKUP/agent-status.json" "$INSTANCE_ID" <<'PY'
 import json,sys
 d=json.load(open(sys.argv[1]))
 assert d["server_id"]==sys.argv[2], "Agent identity mismatch"
 assert d["mode"]=="enforcement", "Agent enforcement unavailable"
 print("Remote agent verified:", d["server_id"])
 PY
+then
+  restore_tunnel
+  echo "Country agent unreachable; restored previous CrowdSec tunnel service" >&2
+  exit 1
+fi
 cat > "$BASE/country-override.yaml" <<YAML
 services:
   $SERVICE:
