@@ -136,7 +136,7 @@ def apply(directory: Path, requested: list[str], *, refresh=False):
                          json.dumps({"countries":countries,"updated_at":updated},sort_keys=True).encode())
         except Exception:
             # Revert the nft transaction if persistence fails. Do not touch other tables.
-            old_table = (f"delete table inet {TABLE}\\n" if nft_exists() else "")
+            old_table = (f"delete table inet {TABLE}\n" if nft_exists() else "")
             if old["countries"] and old_rules:
                 execute_batch(old_table + old_rules.decode("ascii"))
             elif old_table:
