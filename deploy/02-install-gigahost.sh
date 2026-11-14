@@ -1,22 +1,60 @@
 #!/usr/bin/env bash
 # Stage 2 of deployment: run as root on Gigahost srv19210.
-set -euo pipefail
+set -Eeuo pipefail
+trap 'rc=$?; echo "ERROR: Installer stopped at line $LINENO (exit $rc), command: $BASH_COMMAND" >&2' ERR
 [ "$(id -u)" -eq 0 ] || { echo "Run as root" >&2; exit 1; }
 [ "$(hostname -s)" = "srv19210" ] || { echo "Wrong host; expected srv19210" >&2; exit 1; }
+# The public key was verified from the already-running authentik2 tunnel.
+# This is public material only; never embed the private key or agent token.
+PUBLIC_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICECou52olpG6dDHHhOhjcZexQqIeMjRIQ1tdbXHbe0E crowdsec-web-ui-gigahost'
+echo "========== PRE-INSTALL CHECKS (NO CHANGES) =========="
+MISSING=0
 for command in git nft python3 systemctl openssl curl; do
-  command -v "$command" >/dev/null || { echo "Missing: $command" >&2; exit 1; }
+  if command -v "$command" >/dev/null; then
+    echo "OK: $command"
+  else
+    echo "MISSING: $command"
+    MISSING=1
+  fi
 done
-nft list table inet opengov_guard >/dev/null
-systemctl is-active --quiet crowdsec.service
-systemctl is-active --quiet opengov-guard.service
-[ "$(systemctl is-enabled nftables.service 2>/dev/null || true)" = disabled ] || {
-  echo "Expected disabled nftables.service: refusing to modify system" >&2; exit 1;
-}
-printf "Paste the EXISTING CrowdSec tunnel PUBLIC key shown by Stage 1: "
-IFS= read -r PUBLIC_KEY
-[[ "$PUBLIC_KEY" =~ ^ssh-ed25519[[:space:]][A-Za-z0-9+/]+={0,3}([[:space:]].*)?$ ]] || {
-  echo "Invalid SSH public key" >&2; exit 1;
-}
+if nft list table inet opengov_guard >/dev/null 2>&1; then
+  echo "OK: existing OpenGov firewall table present"
+else
+  echo "FAILED: existing OpenGov firewall table not found"
+  MISSING=1
+fi
+for service in crowdsec.service opengov-guard.service; do
+  if systemctl is-active --quiet "$service"; then
+    echo "OK: $service active"
+  else
+    echo "FAILED: $service inactive"
+    MISSING=1
+  fi
+done
+NFT_SERVICE_STATE="$(systemctl is-enabled nftables.service 2>/dev/null || true)"
+if [ "$NFT_SERVICE_STATE" = disabled ]; then
+  echo "OK: nftables.service disabled"
+else
+  echo "FAILED: nftables.service state is $NFT_SERVICE_STATE (expected disabled)"
+  MISSING=1
+fi
+if getent passwd crowdsec-tunnel >/dev/null; then
+  echo "OK: existing crowdsec-tunnel account present"
+else
+  echo "FAILED: existing SSH tunnel account not found"
+  MISSING=1
+fi
+if [ "$MISSING" -ne 0 ]; then
+  echo "Preflight failed. No files, firewall rules, or services changed." >&2
+  exit 1
+fi
+echo "All preflight checks passed."
+if [ "${1:-}" = "--preflight" ]; then
+  echo "READ-ONLY PREFLIGHT COMPLETE. No changes made."
+  exit 0
+fi
+echo "Installing to existing account only."
+
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 BACKUP="/root/4n6-country-backups/$STAMP"
 install -d -m 700 "$BACKUP"
