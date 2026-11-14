@@ -44,8 +44,8 @@ class NftRenderTests(unittest.TestCase):
 
     def test_country_without_ipv6_allocation(self):
         from country_agent.policy import parse_feed
-        policy = {"CN": (parse_feed(b"1.1.1.0/24\\n", 4),
-                         parse_feed(b"# Country: CN\\n", 6, allow_empty=True))}
+        policy = {"CN": (parse_feed(b"1.1.1.0/24\n", 4),
+                         parse_feed(b"# Country: CN\n", 6, allow_empty=True))}
         rules = render_table(policy)
         self.assertIn("ip saddr @blocked_v4 drop", rules)
         self.assertIn("set blocked_v6", rules)
