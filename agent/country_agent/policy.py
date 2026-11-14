@@ -38,7 +38,7 @@ def validate_country(code: str) -> str:
     return code
 
 
-def parse_feed(content: bytes, family: int) -> FamilyPreview:
+def parse_feed(content: bytes, family: int, *, allow_empty: bool = False) -> FamilyPreview:
     if family not in (4, 6):
         raise PolicyValidationError("IP family must be 4 or 6")
     if not content or len(content) > MAX_FILE_BYTES:
@@ -65,7 +65,7 @@ def parse_feed(content: bytes, family: int) -> FamilyPreview:
         networks.add(network)
         if len(networks) > MAX_NETWORKS:
             raise PolicyValidationError("Excessive number of ranges")
-    if not networks:
+    if not networks and not allow_empty:
         raise PolicyValidationError("Feed has no valid ranges")
     ordered = tuple(str(n) for n in sorted(networks, key=lambda n: (int(n.network_address), n.prefixlen)))
     return FamilyPreview(family, ordered, sha256(content).hexdigest())
