@@ -1,0 +1,42 @@
+name: Country Blocking Verification
+on:
+  push:
+    branches:
+      - feature/country-blocking
+  pull_request:
+    paths:
+      - 'client/**'
+      - 'server/**'
+      - 'agent/**'
+      - 'shared/**'
+      - '.github/workflows/country-blocking-verify.yml'
+permissions:
+  contents: read
+jobs:
+  web-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.22.2
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.16.1
+      - name: Validate deployment script syntax
+        run: bash -n deploy/*.sh scripts/inspect-gigahost-country-firewall.sh
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run typecheck
+      - run: pnpm run lint
+      - run: pnpm run build
+  python-unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -v
+        working-directory: agent

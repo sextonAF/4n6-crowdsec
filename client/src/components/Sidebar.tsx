@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, ShieldAlert, Gavel, ListChecks, Bell, X, Sun, Moon, Monitor, ArrowUpCircle, BarChart3, ChartLine, Menu, PanelLeftClose, Settings as SettingsIcon, LogOut, RefreshCw, ChevronDown, Boxes } from "lucide-react";
+import { LayoutDashboard, ShieldAlert, Gavel, ListChecks, Bell, X, Sun, Moon, Monitor, ArrowUpCircle, BarChart3, ChartLine, Globe2, Menu, PanelLeftClose, Settings as SettingsIcon, LogOut, RefreshCw, ChevronDown, Boxes } from "lucide-react";
 import { Badge } from "./ui/Badge";
 import { useAuth } from "../contexts/AuthContext";
 import { useNotificationUnreadCount } from "../contexts/useNotificationUnreadCount";
@@ -172,6 +172,7 @@ export function Sidebar({ isOpen, onClose, onToggle, replaceOnNavigate = false, 
         ...(showAllowlistsNav ? [{ to: "/allowlists", label: "components.sidebar.nav.allowlists", icon: ListChecks }] : []),
         ...(showStatisticsNav ? [{ to: "/statistics", label: "pages.statistics.title", icon: ChartLine }] : []),
         ...(showMetricsNav ? [{ to: "/metrics", label: "components.sidebar.nav.metrics", icon: BarChart3 }] : []),
+        { to: "/country-blocking", label: "Country Blocking", icon: Globe2 },
         { to: "/notifications", label: "components.sidebar.nav.notifications", icon: Bell },
         { to: "/settings", label: "components.sidebar.nav.settings", icon: SettingsIcon },
     ];
@@ -418,7 +419,7 @@ export function Sidebar({ isOpen, onClose, onToggle, replaceOnNavigate = false, 
                     >
                         <div className="flex min-w-0 items-center gap-3">
                             <link.icon className="w-5 h-5 lg:max-2xl:w-[18px] lg:max-2xl:h-[18px]" />
-                            <span className="font-medium">{t(link.label)}</span>
+                            <span className="font-medium">{link.to === "/country-blocking" ? link.label : t(link.label)}</span>
                         </div>
                         {link.to === "/notifications" ? renderUnreadBadge() : null}
                     </NavLink>

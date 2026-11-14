@@ -18,6 +18,7 @@ const Alerts = lazy(async () => ({ default: (await import('./pages/Alerts')).Ale
 const Decisions = lazy(async () => ({ default: (await import('./pages/Decisions')).Decisions }));
 const Allowlists = lazy(async () => ({ default: (await import('./pages/Allowlists')).Allowlists }));
 const Metrics = lazy(async () => ({ default: (await import('./pages/Metrics')).Metrics }));
+const CountryBlocking = lazy(async () => ({ default: (await import('./pages/CountryBlocking')).CountryBlocking }));
 const Notifications = lazy(async () => ({ default: (await import('./pages/Notifications')).Notifications }));
 const Settings = lazy(async () => ({ default: (await import('./pages/Settings')).Settings }));
 const Login = lazy(async () => ({ default: (await import('./pages/Login')).Login }));
@@ -107,6 +108,7 @@ function ProtectedAppShell() {
               </Suspense>
             )}
           />
+          <Route path="country-blocking" element={<Suspense fallback={<RouteFallback />}><CountryBlocking /></Suspense>} />
           <Route
             path="notifications"
             element={(
