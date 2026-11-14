@@ -31,7 +31,22 @@ docker cp "$BACKUP/data/." crowdsec_web_ui:/app/data/
 docker start crowdsec_web_ui >/dev/null
 for i in $(seq 1 30); do
   if curl -fsS --max-time 3 http://127.0.0.1:13000/api/health >/dev/null 2>&1; then
-    echo "Previous UI restored and healthy. Existing firewall selections on Gigahost are independent."
+    # Remove only our forwarding drop-in, restoring the existing SSH tunnel.
+    TUNNEL=crowdsec-gigahost-tunnel.service
+    DROPIN="/etc/systemd/system/$TUNNEL.d/90-4n6-country-forward.conf"
+    if [ -f "$BACKUP/tunnel-service.before.txt" ]; then
+      if [ -f "$BACKUP/tunnel-dropin.before" ]; then
+        cp -a "$BACKUP/tunnel-dropin.before" "$DROPIN"
+      else
+        rm -f "$DROPIN"
+      fi
+      systemctl daemon-reload
+      if ! systemctl restart "$TUNNEL"; then
+        echo "Original Web UI restored, but SSH tunnel restart failed; inspect $TUNNEL" >&2
+        exit 1
+      fi
+    fi
+    echo "Previous UI restored; existing SSH tunnel configuration restored; Gigahost firewall policy unchanged."
     exit 0
   fi
   sleep 2
