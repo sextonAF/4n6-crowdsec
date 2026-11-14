@@ -55,7 +55,6 @@ export function CountryBlocking() {
   useEffect(()=>{
     if(!instance) return;
     let cancelled=false;
-    setStatus(null);setSelected([]);setPreview(null);setConfirmedSelection('');setError('');setNotice('');
     void agentCall<AgentStatus>(instance,'status')
       .then((value)=>{if(!cancelled){setStatus(value);setSelected(value.countries||[]);}})
       .catch((reason:unknown)=>{if(!cancelled)setError(reason instanceof Error?reason.message:'Agent unavailable');});
@@ -102,7 +101,7 @@ export function CountryBlocking() {
     {notice && <div role="status" className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-100">{notice}</div>}
     <Card><CardHeader><CardTitle className="flex items-center gap-2"><Server className="h-5 w-5"/> Server</CardTitle></CardHeader>
       <CardContent><label className="mb-2 block text-sm font-medium" htmlFor="country-target">Select server</label>
-        <select id="country-target" value={instance} disabled={busy||!instances.length} onChange={e=>setInstance(e.target.value)}
+        <select id="country-target" value={instance} disabled={busy||!instances.length} onChange={e=>{setStatus(null);setSelected([]);setPreview(null);setConfirmedSelection('');setError('');setNotice('');setInstance(e.target.value);}}
           className="w-full max-w-md rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
           {!instances.length && <option value="">No configured servers</option>}
           {instances.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}
