@@ -125,12 +125,31 @@ def apply(directory: Path, requested: list[str], *, refresh=False):
         else:
             replacement = render_disable(nft_exists())
             saved = ""
-        # Do not change persistent policy until nft accepted the transaction.
+        # Keep a rollback copy of both the previously applied table and policy.
+        old_rules = (directory / "active.nft").read_bytes() if (directory / "active.nft").exists() else None
+        old_policy = (directory / "policy.json").read_bytes() if (directory / "policy.json").exists() else None
         execute_batch(replacement)
         updated = datetime.now(timezone.utc).isoformat()
-        # Store the last-known-good rules, then its selection. Never persist raw user text.
-        write_atomic(directory / "active.nft", saved.encode("ascii"))
-        write_atomic(directory / "policy.json", json.dumps({"countries":countries,"updated_at":updated},sort_keys=True).encode())
+        try:
+            write_atomic(directory / "active.nft", saved.encode("ascii"))
+            write_atomic(directory / "policy.json",
+                         json.dumps({"countries":countries,"updated_at":updated},sort_keys=True).encode())
+        except Exception:
+            # Revert the nft transaction if persistence fails. Do not touch other tables.
+            old_table = (f"delete table inet {TABLE}\\n" if nft_exists() else "")
+            if old["countries"] and old_rules:
+                execute_batch(old_table + old_rules.decode("ascii"))
+            elif old_table:
+                execute_batch(old_table)
+            if old_rules is not None:
+                write_atomic(directory / "active.nft", old_rules)
+            elif (directory / "active.nft").exists():
+                (directory / "active.nft").unlink()
+            if old_policy is not None:
+                write_atomic(directory / "policy.json", old_policy)
+            elif (directory / "policy.json").exists():
+                (directory / "policy.json").unlink()
+            raise
         counts = {"ipv4":0,"ipv6":0}
         if countries:
             four, six = validate_policy(families)
@@ -154,6 +173,6 @@ def status(directory: Path):
     policy = load_policy(directory)
     present = nft_exists()
     return {"countries":policy["countries"],"updated_at":policy["updated_at"],
-            "enforcement_enabled":bool(policy["countries"]) and present,
-            "applied":not policy["countries"] or present,
+            "enforcement_enabled":bool(policy["countries"]) and present and (directory / "active.nft").is_file(),
+            "applied":(bool(policy["countries"]) and present and (directory / "active.nft").is_file()) or (not policy["countries"] and not present),
             "mode":"enforcement", "table_present":present}
