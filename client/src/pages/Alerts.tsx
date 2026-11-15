@@ -2890,6 +2890,7 @@ export function Alerts() {
 
             {showToolbarBanIp && (
                 <AddDecisionModal
+                    managedBan
                     initialDecision={{ ip: '', type: 'ban', duration: '4h', reason: 'manual' }}
                     instances={instances}
                     multipleInstances={multipleInstances}

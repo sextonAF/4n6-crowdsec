@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { AlertCircle, ShieldCheck } from 'lucide-react';
 import { DEFAULT_MANUAL_DECISION_SCENARIO } from '../../../shared/contracts';
+import { MANAGED_BAN_DURATION, MANAGED_BAN_REASON } from '../lib/permanentBans';
 import { addDecision, addDecisions, checkAllowlist } from '../lib/api';
 import { useI18n } from '../lib/i18n';
 import type {
@@ -29,6 +30,8 @@ type SkippedBatch = BulkTarget & { entries: BulkAddDecisionResponse['allowlisted
 interface AddDecisionModalProps {
     /** In bulk mode (`values` set), `ip` is ignored. */
     initialDecision: AddDecisionRequest;
+    /** Restrict this form to long-lived removable IP bans, not temporary decisions. */
+    managedBan?: boolean;
     /** Adds the same decision for each of these values instead of the single `ip`. */
     values?: string[];
     instances: InstanceSummary[];
@@ -75,6 +78,7 @@ interface ErrorInfo {
 
 export function AddDecisionModal({
     initialDecision,
+    managedBan = false,
     values,
     instances,
     multipleInstances,
@@ -239,6 +243,7 @@ export function AddDecisionModal({
         const payload: AddDecisionRequest = {
             ...decision,
             scenario: selectedScenario,
+            ...(managedBan ? { type: 'ban' as const, duration: MANAGED_BAN_DURATION, reason: MANAGED_BAN_REASON } : {}),
             ...(bypassAllowlist ? { bypass_allowlist: true } : {}),
         };
         if (bulk) {
@@ -302,8 +307,9 @@ export function AddDecisionModal({
     };
 
     return (
-        <Modal isOpen onClose={close} title={t(bulk ? 'pages.decisions.addManualDecisions' : 'pages.decisions.addManualDecision')} maxWidth="max-w-md">
+        <Modal isOpen onClose={close} title={managedBan ? 'Ban IP — Banned IPs list' : t(bulk ? 'pages.decisions.addManualDecisions' : 'pages.decisions.addManualDecision')} maxWidth="max-w-md">
             <form onSubmit={submit} className="space-y-4">
+                {managedBan && <p className="text-sm text-gray-600 dark:text-gray-300">This adds a long-term ban to the Banned IPs list. It can be removed using Unban. CrowdSec requires an expiration, so the ban is set for 10 years.</p>}
                 {bulk ? (
                     <div>
                         <p className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('pages.decisions.bulkValues', { count: bulkValues.length })}</p>
@@ -329,7 +335,7 @@ export function AddDecisionModal({
                     />
                 </div>
                 )}
-                <div>
+                {!managedBan && <div>
                     <label htmlFor="add-decision-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tableColumns.type')}</label>
                     <select
                         id="add-decision-type"
@@ -342,8 +348,8 @@ export function AddDecisionModal({
                             <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
                         ))}
                     </select>
-                </div>
-                <div>
+                </div>}
+                {!managedBan && <div>
                     <label htmlFor="add-decision-duration" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('pages.decisions.duration')}</label>
                     <input
                         id="add-decision-duration"
@@ -355,8 +361,8 @@ export function AddDecisionModal({
                         onChange={(event) => updateDecision({ duration: event.target.value })}
                     />
                     <p className="text-xs text-gray-500 mt-1">{t('pages.decisions.durationHint')}</p>
-                </div>
-                {scenarioOptions.length > 1 && (
+                </div>}
+                {!managedBan && scenarioOptions.length > 1 && (
                     <div>
                         <label htmlFor="add-decision-scenario" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tableColumns.scenario')}</label>
                         <select
@@ -372,7 +378,7 @@ export function AddDecisionModal({
                         </select>
                     </div>
                 )}
-                <div>
+                {!managedBan && <div>
                     <label htmlFor="add-decision-reason" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('pages.decisions.reason')}</label>
                     <input
                         id="add-decision-reason"
@@ -383,7 +389,7 @@ export function AddDecisionModal({
                         value={decision.reason}
                         onChange={(event) => updateDecision({ reason: event.target.value })}
                     />
-                </div>
+                </div>}
                 {multipleInstances && (
                     <div className="space-y-1">
                         <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
@@ -489,7 +495,7 @@ export function AddDecisionModal({
                         {t('common.cancel')}
                     </button>
                     <button type="submit" disabled={inProgress || blockedByAllowlist} className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50">
-                        {inProgress ? t('pages.decisions.adding') : retrying ? 'Retry failed instances' : bulk ? t('pages.decisions.addDecisionsCount', { count: bulkValues.length }) : t('pages.decisions.addDecision')}
+                        {inProgress ? t('pages.decisions.adding') : retrying ? 'Retry failed instances' : managedBan ? 'Add to Banned IPs' : bulk ? t('pages.decisions.addDecisionsCount', { count: bulkValues.length }) : t('pages.decisions.addDecision')}
                     </button>
                 </div>
             </form>

@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal';
 import { AddDecisionModal } from '../components/AddDecisionModal';
 import type { DecisionListItem, InstanceSummary } from '../types';
+import { MANAGED_BAN_QUERY } from '../lib/permanentBans';
 
 const PAGE_SIZE = 50;
-const ACTIVE_BAN_QUERY = 'type:ban AND status:active AND origin:cscli';
+const ACTIVE_BAN_QUERY = MANAGED_BAN_QUERY;
 
 export function BannedIPs() {
   const [instances, setInstances] = useState<InstanceSummary[]>([]);
@@ -76,7 +77,7 @@ export function BannedIPs() {
         <ShieldBan className="h-7 w-7 text-red-600" aria-hidden="true"/>
         <div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Banned IPs</h1>
-          <p className="text-sm text-gray-500">Manually imposed IP bans. Automatic temporary bans remain on Decisions.</p>
+          <p className="text-sm text-gray-500">Long-term manually managed bans. Use Unban to remove an IP at any time.</p>
         </div>
       </div>
       <div className="flex gap-2">
@@ -91,7 +92,7 @@ export function BannedIPs() {
       </div>
     </div>
     <Card>
-      <CardHeader><CardTitle>Manual bans ({total})</CardTitle></CardHeader>
+      <CardHeader><CardTitle>Banned IPs ({total})</CardTitle></CardHeader>
       <CardContent>
         <div className="mb-4 flex flex-wrap gap-3">
           <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
@@ -133,7 +134,7 @@ export function BannedIPs() {
                 </td>}
               </tr>)}
               {loading && <tr><td colSpan={canManage?5:4} className="px-3 py-8 text-center text-gray-500">Loading active IP bans…</td></tr>}
-              {!loading && visible.length===0 && <tr><td colSpan={canManage?5:4} className="px-3 py-8 text-center text-gray-500">No manual bans match this view.</td></tr>}
+              {!loading && visible.length===0 && <tr><td colSpan={canManage?5:4} className="px-3 py-8 text-center text-gray-500">No IPs in the managed ban list match this view.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -166,7 +167,8 @@ export function BannedIPs() {
       </div>
     </Modal>
     {showAdd && <AddDecisionModal
-      initialDecision={{ip:'',type:'ban',duration:'4h',reason:'manual'}}
+      managedBan
+      initialDecision={{ip:'',type:'ban',duration:'87600h',reason:'permanent-ban'}}
       instances={instances}
       multipleInstances={instances.length>1}
       currentInstanceId={scope!=='all'?scope:undefined}
