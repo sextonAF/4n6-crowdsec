@@ -1609,7 +1609,7 @@ export function Dashboard() {
 
             {/* Firewall policy summary: live selected countries, CrowdSec ban decisions, and telemetry availability. */}
             <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
-                <Link to="/decisions" className="block h-full">
+                <Link to="/banned-ips" className="block h-full">
                     <Card className="h-full hover:shadow-lg">
                         <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-center sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
                             <div className="shrink-0 text-red-600"><ShieldBan className="h-5 w-5" /></div>
