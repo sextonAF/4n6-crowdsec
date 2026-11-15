@@ -678,8 +678,8 @@ export function Dashboard() {
     const [activeBanDecisions, setActiveBanDecisions] = useState<number | null>(null);
     useEffect(() => {
         let cancelled=false;
-        // Count live CrowdSec IP bans, not historical alerts or country CIDR ranges.
-        void fetchDecisionsPaginated(1,1,{q:'type:ban AND status:active'})
+        // Count manually imposed bans shown in Banned IPs; automated decisions remain on Decisions.
+        void fetchDecisionsPaginated(1,1,{q:'type:ban AND status:active AND origin:cscli'})
           .then(result=>{if(!cancelled)setActiveBanDecisions(result.pagination.total);})
           .catch(()=>{if(!cancelled)setActiveBanDecisions(null);});
         return ()=>{cancelled=true;};
@@ -1616,7 +1616,7 @@ export function Dashboard() {
                             <div className="min-w-0">
                                 <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">Total banned IPs</p>
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white sm:text-2xl">{activeBanDecisions===null?'—':activeBanDecisions.toLocaleString()}</h3>
-                                <p className="text-xs text-gray-500">Active CrowdSec ban decisions</p>
+                                <p className="text-xs text-gray-500">Manually imposed IP bans</p>
                             </div>
                         </CardContent>
                     </Card>
