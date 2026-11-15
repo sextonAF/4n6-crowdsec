@@ -105,7 +105,7 @@ export function CountryBlocking() {
             className="rounded-lg bg-primary-600 px-5 py-2 text-sm font-medium text-white">OK</button>
         </div>
       </div>
-    </div>
+    </div>}
     <Card><CardHeader><CardTitle className="flex items-center gap-2"><Server className="h-5 w-5"/> Server</CardTitle></CardHeader>
       <CardContent><label className="mb-2 block text-sm font-medium" htmlFor="country-target">Select server</label>
         <select id="country-target" value={instance} disabled={busy||!instances.length} onChange={e=>{setStatus(null);setSelected([]);setError('');setNotice('');setInstance(e.target.value);}}
