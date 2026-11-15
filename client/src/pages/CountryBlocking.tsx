@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Globe2, Search, Server, ShieldBan } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { Modal } from '../components/ui/Modal';
 import { fetchConfig } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { apiUrl } from '../lib/basePath';
@@ -34,6 +35,7 @@ export function CountryBlocking() {
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
   const [notice,setNotice] = useState('');
+  const [pending,setPending] = useState<{countries:string[];instance:string}|null>(null);
   const ready = !!status && status.mode === 'enforcement';
   const matches = useMemo(() => COUNTRIES.filter((country) =>
     country.name.toLowerCase().includes(search.trim().toLowerCase()) ||
@@ -62,21 +64,26 @@ export function CountryBlocking() {
     setSelected((current)=>current.includes(code)?current.filter(x=>x!==code):[...current,code]);
     setNotice('');
   };
-  const apply = async () => {
+  const requestApply = async (countries:string[]) => {
     if(!instance || !ready || user?.role!=='admin' || busy)return;
-    const countries=[...selected].sort();
-    const expected=countries.join(',');
-    const name=instances.find(x=>x.id===instance)?.name||instance;
     setBusy(true);setError('');setNotice('');
     try {
-      // Keep dry-run validation, but run it automatically on Apply.
-      const preview=await agentCall<Preview>(instance,'preview',countries);
+      const prepared=[...countries].sort();
+      const preview=await agentCall<Preview>(instance,'preview',prepared);
       if(preview.server_id!==instance || !preview.dry_run || preview.applied ||
-         [...preview.countries].sort().join(',')!==expected) {
+         [...preview.countries].sort().join(',')!==prepared.join(',')) {
         throw new Error('Invalid agent preview response');
       }
-      if(!window.confirm(`Apply inbound country restrictions on ${name}?\n\n${countries.length?countries.map(code=>COUNTRIES.find(c=>c.code===code)?.name||code).join(', '):'REMOVE ALL COUNTRY BLOCKS'}\n\nThis affects all inbound ports, including SSH.`))return;
-      const result=await agentCall<AgentStatus>(instance,'apply',countries);
+      setPending({countries:prepared,instance});
+    } catch(reason){setError(reason instanceof Error?reason.message:'Preview failed');}
+    finally{setBusy(false);}
+  };
+  const apply = async () => {
+    if(!pending || busy || user?.role!=='admin' || pending.instance!==instance)return;
+    const expected=pending.countries.join(',');
+    setPending(null);setBusy(true);setError('');setNotice('');
+    try {
+      const result=await agentCall<AgentStatus>(instance,'apply',pending.countries);
       if(result.server_id!==instance || !result.applied) throw new Error('Agent did not confirm enforcement');
       const verified=await agentCall<AgentStatus>(instance,'status');
       if(verified.server_id!==instance || !verified.applied ||
@@ -84,7 +91,11 @@ export function CountryBlocking() {
       setStatus(verified);setSelected(verified.countries);
       setNotice('Country policy applied and verified on the selected server.');
     } catch(reason){setError(reason instanceof Error?reason.message:'Apply failed — verify server status');}
-    finally {setBusy(false);}
+    finally{setBusy(false);}
+  };
+  const removeEnforced = (code:string) => {
+    if(!status || !ready || busy)return;
+    void requestApply(status.countries.filter(country=>country!==code));
   };
   return <div className="mx-auto w-full max-w-5xl space-y-5 pb-8">
     <div className="flex items-center gap-3">
@@ -106,9 +117,23 @@ export function CountryBlocking() {
         </div>
       </div>
     </div>}
+    <Modal isOpen={pending!==null} onClose={()=>setPending(null)} title="Confirm country restrictions" maxWidth="max-w-lg">
+      <p className="text-sm text-gray-700 dark:text-gray-200">
+        Apply inbound country restrictions on {instances.find(x=>x.id===pending?.instance)?.name||instance}?
+      </p>
+      <div className="mt-3 max-h-48 overflow-y-auto rounded border border-gray-200 p-3 text-sm dark:border-gray-700">
+        {pending?.countries.length ? pending.countries.map(code=>COUNTRIES.find(x=>x.code===code)?.name||code).join(', ') : 'Remove all country blocks'}
+      </div>
+      <p className="mt-3 text-sm text-amber-700 dark:text-amber-300">This affects all inbound ports, including SSH.</p>
+      <div className="mt-5 flex justify-end gap-3">
+        <button type="button" onClick={()=>setPending(null)} className="rounded border border-gray-300 px-4 py-2 dark:border-gray-600">Cancel</button>
+        <button type="button" disabled={busy} onClick={()=>void apply()}
+          className="rounded bg-red-700 px-4 py-2 font-medium text-white disabled:opacity-40">Confirm apply</button>
+      </div>
+    </Modal>
     <Card><CardHeader><CardTitle className="flex items-center gap-2"><Server className="h-5 w-5"/> Server</CardTitle></CardHeader>
       <CardContent><label className="mb-2 block text-sm font-medium" htmlFor="country-target">Select server</label>
-        <select id="country-target" value={instance} disabled={busy||!instances.length} onChange={e=>{setStatus(null);setSelected([]);setError('');setNotice('');setInstance(e.target.value);}}
+        <select id="country-target" value={instance} disabled={busy||!instances.length} onChange={e=>{setStatus(null);setSelected([]);setPending(null);setError('');setNotice('');setInstance(e.target.value);}}
           className="w-full max-w-md rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
           {!instances.length && <option value="">No configured servers</option>}
           {instances.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}
@@ -117,6 +142,20 @@ export function CountryBlocking() {
           ? `Enforcing ${status?.countries.length||0} selected countries` : 'No country blocks currently active')
           : 'Firewall agent not connected or not enabled for this server'}</p>
         {status?.updated_at && <p className="mt-1 text-xs text-gray-500">Last change: {new Date(status.updated_at).toLocaleString()}</p>}
+        <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
+          <h3 className="mb-2 text-sm font-semibold">Enforced countries</h3>
+          {!status?.countries.length ? <p className="text-sm text-gray-500">None</p> : (
+            <div className="max-h-44 space-y-1 overflow-y-auto rounded border border-gray-200 p-2 dark:border-gray-700">
+              {status.countries.map(code=><div key={code} className="flex items-center justify-between gap-2 py-1 text-sm">
+                <span>{COUNTRIES.find(country=>country.code===code)?.name||code} ({code})</span>
+                <button type="button" disabled={busy||user?.role!=='admin'} onClick={()=>removeEnforced(code)}
+                  className="rounded border border-red-300 px-3 py-1 text-red-700 hover:bg-red-50 disabled:opacity-40 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950">
+                  Remove
+                </button>
+              </div>)}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
     <Card><CardHeader><CardTitle className="flex items-center gap-2"><ShieldBan className="h-5 w-5"/> Country selection</CardTitle></CardHeader>
@@ -125,11 +164,11 @@ export function CountryBlocking() {
         <input id="country-search" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Country name or ISO code"
           className="w-full rounded border border-gray-300 bg-white py-2 pl-9 pr-3 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"/>
         </div>
-        <p className="mt-2 text-xs text-gray-500">Selected: {selected.length} / 30 maximum. Changes do not take effect until Apply.</p>
+        <p className="mt-2 text-xs text-gray-500">Selected: {selected.length}. Changes do not take effect until Apply.</p>
         <div className="mt-3 max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
           {matches.map(country=><label key={country.code} className="flex cursor-pointer items-center justify-between py-2.5 text-sm">
             <span>{country.name} <span className="text-gray-500">({country.code})</span></span>
-            <input type="checkbox" disabled={!ready||busy||user?.role!=='admin'||(!selected.includes(country.code)&&selected.length>=30)}
+            <input type="checkbox" disabled={!ready||busy||user?.role!=='admin'}
               checked={selected.includes(country.code)} onChange={()=>toggle(country.code)} className="h-4 w-4"/>
           </label>)}
           {!matches.length&&<p className="py-3 text-sm text-gray-500">No matching country.</p>}
@@ -141,7 +180,7 @@ export function CountryBlocking() {
         {selected.length ? selected.map(code=>COUNTRIES.find(country=>country.code===code)?.name||code).join(', ') : 'No countries selected — applying this selection removes all country blocks.'}
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={apply} disabled={busy||!ready||user?.role!=='admin'}
+        <button type="button" onClick={()=>void requestApply(selected)} disabled={busy||!ready||user?.role!=='admin'}
           className="rounded bg-red-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
           {busy?'Processing…':'Apply to server'}
         </button>
