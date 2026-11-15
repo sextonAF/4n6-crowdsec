@@ -32,6 +32,8 @@ interface AddDecisionModalProps {
     initialDecision: AddDecisionRequest;
     /** Restrict this form to long-lived removable IP bans, not temporary decisions. */
     managedBan?: boolean;
+    /** Selected-alert ban: show the existing IP read-only for confirmation. */
+    confirmIp?: boolean;
     /** Adds the same decision for each of these values instead of the single `ip`. */
     values?: string[];
     instances: InstanceSummary[];
@@ -79,6 +81,7 @@ interface ErrorInfo {
 export function AddDecisionModal({
     initialDecision,
     managedBan = false,
+    confirmIp = false,
     values,
     instances,
     multipleInstances,
@@ -307,7 +310,7 @@ export function AddDecisionModal({
     };
 
     return (
-        <Modal isOpen onClose={close} title={managedBan ? 'Ban IP — Banned IPs list' : t(bulk ? 'pages.decisions.addManualDecisions' : 'pages.decisions.addManualDecision')} maxWidth="max-w-md">
+        <Modal isOpen onClose={close} title={managedBan ? (confirmIp ? 'Confirm IP ban' : 'Ban IP — Banned IPs list') : t(bulk ? 'pages.decisions.addManualDecisions' : 'pages.decisions.addManualDecision')} maxWidth="max-w-md">
             <form onSubmit={submit} className="space-y-4">
                 {managedBan && <p className="text-sm text-gray-600 dark:text-gray-300">This adds a long-term ban to the Banned IPs list. It can be removed using Unban. CrowdSec requires an expiration, so the ban is set for 10 years.</p>}
                 {bulk ? (
@@ -322,17 +325,26 @@ export function AddDecisionModal({
                     </div>
                 ) : (
                 <div>
-                    <label htmlFor="add-decision-ip" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tableColumns.source')}</label>
-                    <input
-                        id="add-decision-ip"
-                        type="text"
-                        required
-                        disabled={inProgress}
-                        className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        placeholder="1.2.3.4"
-                        value={decision.ip}
-                        onChange={(event) => updateDecision({ ip: event.target.value })}
-                    />
+                    {confirmIp ? (
+                        <>
+                            <p className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Confirm the IP address to ban</p>
+                            <p className="rounded-md border border-gray-200 bg-gray-50 px-3 py-3 font-mono text-base font-semibold text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white">{decision.ip}</p>
+                        </>
+                    ) : (
+                        <>
+                            <label htmlFor="add-decision-ip" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tableColumns.source')}</label>
+                            <input
+                                id="add-decision-ip"
+                                type="text"
+                                required
+                                disabled={inProgress}
+                                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 dark:text-gray-100 text-gray-900 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                placeholder="1.2.3.4"
+                                value={decision.ip}
+                                onChange={(event) => updateDecision({ ip: event.target.value })}
+                            />
+                        </>
+                    )}
                 </div>
                 )}
                 {!managedBan && <div>
@@ -495,7 +507,7 @@ export function AddDecisionModal({
                         {t('common.cancel')}
                     </button>
                     <button type="submit" disabled={inProgress || blockedByAllowlist} className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50">
-                        {inProgress ? t('pages.decisions.adding') : retrying ? 'Retry failed instances' : managedBan ? 'Add to Banned IPs' : bulk ? t('pages.decisions.addDecisionsCount', { count: bulkValues.length }) : t('pages.decisions.addDecision')}
+                        {inProgress ? t('pages.decisions.adding') : retrying ? 'Retry failed instances' : managedBan ? (confirmIp ? 'Confirm Ban IP' : 'Add to Banned IPs') : bulk ? t('pages.decisions.addDecisionsCount', { count: bulkValues.length }) : t('pages.decisions.addDecision')}
                     </button>
                 </div>
             </form>

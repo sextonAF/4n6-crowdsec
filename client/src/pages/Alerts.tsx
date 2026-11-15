@@ -1780,6 +1780,16 @@ export function Alerts() {
         .filter((alert) => selectedFilteredAlertIds.includes(alertKey(alert)))
         .map(alertRef);
     const selectedAlertSessions = alertSessions.filter((session) => selectedFilteredAlertIds.includes(session.key));
+    // A selected alert supplies the IP; only an unselected toolbar action asks for manual entry.
+    const selectedBanAlerts = groupedView
+        ? selectedAlertSessions.map((session) => session.latest)
+        : filteredAlerts.filter((alert) => selectedFilteredAlertIds.includes(alertKey(alert)));
+    const selectedBanIps = [...new Set(selectedBanAlerts
+        .map((alert) => getAlertDecisionIp(alert))
+        .filter((ip): ip is string => !!ip))];
+    const selectedBanInstanceId = selectedBanAlerts.length === 1 ? selectedBanAlerts[0].instance_id : undefined;
+    const selectedBanInstanceName = selectedBanAlerts.length === 1 ? selectedBanAlerts[0].instance_name : undefined;
+
     const allFilteredAlertsSelected = selectableAlertIds.length > 0 && selectedFilteredAlertIds.length === selectableAlertIds.length;
     const someFilteredAlertsSelected = selectedFilteredAlertIds.length > 0 && !allFilteredAlertsSelected;
 
@@ -2891,10 +2901,14 @@ export function Alerts() {
             {showToolbarBanIp && (
                 <AddDecisionModal
                     managedBan
-                    initialDecision={{ ip: '', type: 'ban', duration: '4h', reason: 'manual' }}
+                    confirmIp={selectedBanIps.length === 1}
+                    {...(selectedBanIps.length > 1 ? { values: selectedBanIps } : {})}
+                    initialDecision={{ ip: selectedBanIps.length === 1 ? selectedBanIps[0] : '', type: 'ban', duration: '87600h', reason: 'permanent-ban' }}
                     instances={instances}
                     multipleInstances={multipleInstances}
-                    defaultAllInstances={multipleInstances}
+                    currentInstanceId={selectedBanIps.length === 1 ? selectedBanInstanceId : undefined}
+                    currentInstanceName={selectedBanIps.length === 1 ? selectedBanInstanceName : undefined}
+                    defaultAllInstances={selectedBanIps.length !== 1 || !selectedBanInstanceId}
                     onClose={() => setShowToolbarBanIp(false)}
                     onDecisionAdded={refreshAfterDecision}
                 />
