@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Globe2, Search, Server, ShieldBan } from 'lucide-react';
+import { AlertTriangle, Globe2, Search, Server, ShieldBan, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
 import { fetchConfig } from '../lib/api';
@@ -145,14 +145,20 @@ export function CountryBlocking() {
         <div className="mt-4 border-t border-gray-200 pt-4 dark:border-gray-700">
           <h3 className="mb-2 text-sm font-semibold">Enforced countries</h3>
           {!status?.countries.length ? <p className="text-sm text-gray-500">None</p> : (
-            <div className="max-h-44 space-y-1 overflow-y-auto rounded border border-gray-200 p-2 dark:border-gray-700">
-              {status.countries.map(code=><div key={code} className="flex items-center justify-between gap-2 py-1 text-sm">
-                <span>{COUNTRIES.find(country=>country.code===code)?.name||code} ({code})</span>
-                <button type="button" disabled={busy||user?.role!=='admin'} onClick={()=>removeEnforced(code)}
-                  className="rounded border border-red-300 px-3 py-1 text-red-700 hover:bg-red-50 disabled:opacity-40 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950">
-                  Remove
-                </button>
-              </div>)}
+            <div className="max-h-44 overflow-y-auto rounded border border-gray-200 p-2 dark:border-gray-700">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {status.countries.map(code=><div key={code} className="flex min-w-0 items-center justify-between gap-2 rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-800">
+                  <span className="truncate" title={COUNTRIES.find(country=>country.code===code)?.name||code}>
+                    {COUNTRIES.find(country=>country.code===code)?.name||code} <span className="text-xs text-gray-500">({code})</span>
+                  </span>
+                  <button type="button" disabled={busy||user?.role!=='admin'} onClick={()=>removeEnforced(code)}
+                    title={`Remove ${COUNTRIES.find(country=>country.code===code)?.name||code}`}
+                    aria-label={`Remove ${COUNTRIES.find(country=>country.code===code)?.name||code}`}
+                    className="shrink-0 rounded p-1 text-red-700 hover:bg-red-100 disabled:opacity-40 dark:text-red-300 dark:hover:bg-red-950">
+                    <X className="h-4 w-4" aria-hidden="true"/>
+                  </button>
+                </div>)}
+              </div>
             </div>
           )}
         </div>
