@@ -361,6 +361,7 @@ export function Alerts() {
     const [loadingMore, setLoadingMore] = useState(false);
     const [selectedAlert, setSelectedAlert] = useState<AlertSelection | null>(null);
     const [pendingDecisionAlert, setPendingDecisionAlert] = useState<AlertSelection | null>(null);
+    const [showToolbarBanIp, setShowToolbarBanIp] = useState(false);
     const [modalDecisions, setModalDecisions] = useState<DecisionListItem[]>([]);
     const [modalDecisionsLoading, setModalDecisionsLoading] = useState(false);
     const [modalDecisionsLoadingMore, setModalDecisionsLoadingMore] = useState(false);
@@ -2297,6 +2298,14 @@ export function Alerts() {
 
             {canManageEnforcement && (
                 <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={() => setShowToolbarBanIp(true)}
+                        className="inline-flex items-center gap-2 rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800"
+                    >
+                        <Gavel size={16} aria-hidden="true" />
+                        Ban IP
+                    </button>
                     <Link to="/banned-ips"
                         className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
                         Banned IPs
@@ -2878,6 +2887,17 @@ export function Alerts() {
                     </div>
                 )}
             </Modal>
+
+            {showToolbarBanIp && (
+                <AddDecisionModal
+                    initialDecision={{ ip: '', type: 'ban', duration: '4h', reason: 'manual' }}
+                    instances={instances}
+                    multipleInstances={multipleInstances}
+                    defaultAllInstances={multipleInstances}
+                    onClose={() => setShowToolbarBanIp(false)}
+                    onDecisionAdded={refreshAfterDecision}
+                />
+            )}
 
             {pendingDecisionAlert && (
                 <AddDecisionModal
