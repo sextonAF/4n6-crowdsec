@@ -847,7 +847,7 @@ export function WorldMapCard({
             if(paths.length<geoFeatures.length)return;
             const banned=new Set(blockedCountries);
             geoFeatures.forEach((feature,index)=>{
-                paths[index].style.fill=banned.has(feature.id) ? '#b91c1c' : '';
+                paths[index].style.fill=banned.has(feature.id) ? '#7c3aed' : '';
             });
         });
         return ()=>window.cancelAnimationFrame(frame);
