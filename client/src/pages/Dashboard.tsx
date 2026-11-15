@@ -1608,30 +1608,39 @@ export function Dashboard() {
             </div>
 
             {/* Firewall policy summary: live selected countries, CrowdSec ban decisions, and telemetry availability. */}
-            <div className="grid gap-3 sm:grid-cols-3 sm:gap-4 lg:gap-6">
-                <Link to="/decisions" className="block">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+                <Link to="/decisions" className="block h-full">
                     <Card className="h-full hover:shadow-lg">
-                        <CardContent className="p-4 sm:p-5">
-                            <div className="flex items-center gap-2 text-sm text-gray-500"><ShieldBan className="h-5 w-5 text-red-600"/> Total banned IPs</div>
-                            <p className="mt-1 text-2xl font-bold">{activeBanDecisions===null?'—':activeBanDecisions.toLocaleString()}</p>
-                            <p className="mt-1 text-xs text-gray-500">Active CrowdSec ban decisions</p>
+                        <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-center sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
+                            <div className="shrink-0 text-red-600"><ShieldBan className="h-5 w-5" /></div>
+                            <div className="min-w-0">
+                                <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">Total banned IPs</p>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white sm:text-2xl">{activeBanDecisions===null?'—':activeBanDecisions.toLocaleString()}</h3>
+                                <p className="text-xs text-gray-500">Active CrowdSec ban decisions</p>
+                            </div>
                         </CardContent>
                     </Card>
                 </Link>
-                <Link to="/country-blocking" className="block">
+                <Link to="/country-blocking" className="block h-full">
                     <Card className="h-full hover:shadow-lg">
-                        <CardContent className="p-4 sm:p-5">
-                            <div className="flex items-center gap-2 text-sm text-gray-500"><Globe2 className="h-5 w-5 text-blue-600"/> Total banned countries</div>
-                            <p className="mt-1 text-2xl font-bold">{blockedCountryCodes.length.toLocaleString()}</p>
-                            <p className="mt-1 text-xs text-gray-500">Enforced countries reported by connected agents</p>
+                        <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-center sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
+                            <div className="shrink-0 text-blue-600"><Globe2 className="h-5 w-5" /></div>
+                            <div className="min-w-0">
+                                <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">Total banned countries</p>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white sm:text-2xl">{blockedCountryCodes.length.toLocaleString()}</h3>
+                                <p className="text-xs text-gray-500">Enforced countries reported by connected agents</p>
+                            </div>
                         </CardContent>
                     </Card>
                 </Link>
                 <Card>
-                    <CardContent className="p-4 sm:p-5">
-                        <div className="flex items-center gap-2 text-sm text-gray-500"><ShieldAlert className="h-5 w-5 text-orange-600"/> Attacks from banned (7 days)</div>
-                        <p className="mt-1 text-2xl font-bold">—</p>
-                        <p className="mt-1 text-xs text-gray-500">Firewall drop history is not collected yet</p>
+                    <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-center sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
+                        <div className="shrink-0 text-orange-600"><ShieldAlert className="h-5 w-5" /></div>
+                        <div className="min-w-0">
+                            <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">Attacks from banned (7 days)</p>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white sm:text-2xl">—</h3>
+                            <p className="text-xs text-gray-500">Firewall drop history is not collected yet</p>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
