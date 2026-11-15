@@ -237,6 +237,7 @@ interface WorldMapCardProps {
     attackLocations?: DashboardAttackLocationDatum[];
     onCountrySelect: (countryCode: string) => void;
     selectedCountry: string | null;
+    blockedCountries?: string[];
     simulationsEnabled?: boolean;
     selectionDisabledReason?: string;
 }
@@ -313,6 +314,7 @@ export function WorldMapCard({
     attackLocations = [],
     onCountrySelect,
     selectedCountry,
+    blockedCountries = [],
     simulationsEnabled = false,
     selectionDisabledReason,
 }: WorldMapCardProps) {
@@ -834,6 +836,22 @@ export function WorldMapCard({
 
         return () => window.cancelAnimationFrame(animationFrameId);
     }, [selectedCountry, geoFeatures, isLoadingStats]);
+
+    // A country block is a policy state, not an attack heat-map value.
+    // Color enforced countries independently of the existing attack markers.
+    useEffect(() => {
+        if (!containerRef.current || !geoFeatures.length) return;
+        const frame = window.requestAnimationFrame(() => {
+            const paths=Array.from(containerRef.current?.querySelectorAll<SVGPathElement>('path')||[])
+                .filter(path=>{const fill=path.getAttribute('fill');return !!fill && fill!=='none';});
+            if(paths.length<geoFeatures.length)return;
+            const banned=new Set(blockedCountries);
+            geoFeatures.forEach((feature,index)=>{
+                paths[index].style.fill=banned.has(feature.id) ? '#b91c1c' : '';
+            });
+        });
+        return ()=>window.cancelAnimationFrame(frame);
+    },[blockedCountries,geoFeatures,isLoadingStats,nivoData]);
 
     return (
         <div

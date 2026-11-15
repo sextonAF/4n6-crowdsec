@@ -1,7 +1,9 @@
 import { lazy, memo, startTransition, Suspense, useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
-import { fetchDashboardStats, fetchConfig } from "../lib/api";
+import { fetchDashboardStats, fetchConfig, fetchDecisionsPaginated } from "../lib/api";
+import { apiUrl } from "../lib/basePath";
+import { sessionFetch } from "../lib/sessionFetch";
 import { useRefresh } from "../contexts/useRefresh";
 import { Card, CardContent } from "../components/ui/Card";
 import { StatCard } from "../components/StatCard";
@@ -16,7 +18,9 @@ import {
     ShieldAlert,
     Gavel,
     Activity,
-    TrendingUp
+    TrendingUp,
+    Globe2,
+    ShieldBan
 } from "lucide-react";
 import { DASHBOARD_COLORS } from "../lib/dashboardColors";
 import { getCountryCodesMatchingName, getCountryName } from "../lib/utils";
@@ -670,6 +674,33 @@ export function Dashboard() {
     const [filterApplying, setFilterApplying] = useState(false);
     const [filterApplicationVersion, setFilterApplicationVersion] = useState(0);
     const [config, setConfig] = useState<ConfigResponse | null>(null);
+    const [blockedCountryCodes, setBlockedCountryCodes] = useState<string[]>([]);
+    const [activeBanDecisions, setActiveBanDecisions] = useState<number | null>(null);
+    useEffect(() => {
+        let cancelled=false;
+        // Count live CrowdSec IP bans, not historical alerts or country CIDR ranges.
+        void fetchDecisionsPaginated(1,1,{q:'type:ban AND status:active'})
+          .then(result=>{if(!cancelled)setActiveBanDecisions(result.pagination.total);})
+          .catch(()=>{if(!cancelled)setActiveBanDecisions(null);});
+        return ()=>{cancelled=true;};
+    },[refreshSignal]);
+    useEffect(() => {
+        let cancelled=false;
+        const servers=config?.instances||[];
+        if(!servers.length)return;
+        void Promise.all(servers.map(async server=>{
+            try {
+                const response=await sessionFetch(apiUrl(`/api/country-blocking/${encodeURIComponent(server.id)}/status`));
+                if(!response.ok)return [];
+                const body=await response.json() as {mode?:string;enforcement_enabled?:boolean;countries?:string[]};
+                return body.mode==='enforcement' && body.enforcement_enabled && Array.isArray(body.countries)
+                    ? body.countries.filter(code=>/^[A-Z]{2}$/.test(code)) : [];
+            } catch {return [];}
+        })).then(lists=>{
+            if(!cancelled)setBlockedCountryCodes([...new Set(lists.flat())].sort());
+        });
+        return ()=>{cancelled=true;};
+    },[config,refreshSignal]);
     const [initialStoredFilters] = useState(() => initializeDashboardSearch(
         migrateLegacyDashboardFilters(loadStoredQuickFilters()),
         searchParams.get('q') ?? '',
@@ -1576,6 +1607,35 @@ export function Dashboard() {
                 </Card>
             </div>
 
+            {/* Firewall policy summary: live selected countries, CrowdSec ban decisions, and telemetry availability. */}
+            <div className="grid gap-3 sm:grid-cols-3 sm:gap-4 lg:gap-6">
+                <Link to="/decisions" className="block">
+                    <Card className="h-full hover:shadow-lg">
+                        <CardContent className="p-4 sm:p-5">
+                            <div className="flex items-center gap-2 text-sm text-gray-500"><ShieldBan className="h-5 w-5 text-red-600"/> Total banned IPs</div>
+                            <p className="mt-1 text-2xl font-bold">{activeBanDecisions===null?'—':activeBanDecisions.toLocaleString()}</p>
+                            <p className="mt-1 text-xs text-gray-500">Active CrowdSec ban decisions</p>
+                        </CardContent>
+                    </Card>
+                </Link>
+                <Link to="/country-blocking" className="block">
+                    <Card className="h-full hover:shadow-lg">
+                        <CardContent className="p-4 sm:p-5">
+                            <div className="flex items-center gap-2 text-sm text-gray-500"><Globe2 className="h-5 w-5 text-blue-600"/> Total banned countries</div>
+                            <p className="mt-1 text-2xl font-bold">{blockedCountryCodes.length.toLocaleString()}</p>
+                            <p className="mt-1 text-xs text-gray-500">Enforced countries reported by connected agents</p>
+                        </CardContent>
+                    </Card>
+                </Link>
+                <Card>
+                    <CardContent className="p-4 sm:p-5">
+                        <div className="flex items-center gap-2 text-sm text-gray-500"><ShieldAlert className="h-5 w-5 text-orange-600"/> Attacks from banned (7 days)</div>
+                        <p className="mt-1 text-2xl font-bold">—</p>
+                        <p className="mt-1 text-xs text-gray-500">Firewall drop history is not collected yet</p>
+                    </CardContent>
+                </Card>
+            </div>
+
             {/* Statistics Section */}
             <div className="space-y-6">
                 <div className="relative space-y-2">
@@ -1699,6 +1759,7 @@ export function Dashboard() {
                                 attackLocations={dashboardData.attackLocations}
                                 onCountrySelect={handleCountrySelect}
                                 selectedCountry={filters.country}
+                                blockedCountries={blockedCountryCodes}
                                 simulationsEnabled={simulationsEnabled}
                                 selectionDisabledReason={quickFilterDisabledReason}
                             />
