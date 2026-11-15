@@ -36,7 +36,8 @@ trap cleanup EXIT
 echo "Checking frontend-only changes..."
 git clone -q --depth 30 https://github.com/sextonAF/4n6-crowdsec.git "$BUILD/repo"
 cd "$BUILD/repo"
-[ "$(git rev-parse HEAD)" = "$RELEASE" ] || { echo "Unexpected source revision, stopping"; exit 1; }
+git cat-file -e "$RELEASE^{commit}" || { echo "Requested frontend release missing"; exit 1; }
+git checkout -q --detach "$RELEASE"
 git cat-file -e "$OLD_REV^{commit}" || { echo "Installed revision not found in source history"; exit 1; }
 git diff --quiet "$OLD_REV" "$RELEASE" -- server shared package.json pnpm-lock.yaml pnpm-workspace.yaml scripts tsup.config.ts || { echo "Backend or dependency changes detected. Stopping"; exit 1; }
 test -f client/src/pages/BannedIPs.tsx
