@@ -1511,8 +1511,8 @@ export function Dashboard() {
                 <Link to={alertsLink} className="block h-full transition-transform hover:scale-105">
                     <Card className="h-full cursor-pointer hover:shadow-lg transition-shadow">
                         <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-center sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
-                            <div className="rounded-full bg-red-100 p-2 text-red-600 dark:bg-red-900/20 dark:text-red-400 sm:p-3 lg:p-4">
-                                <ShieldAlert className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
+                            <div className="shrink-0 text-red-600 dark:text-red-400">
+                                <ShieldAlert className="h-5 w-5" />
                             </div>
                             <div className="min-w-0">
                                 <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">{t('pages.dashboard.totalAlerts')}</p>
@@ -1549,8 +1549,8 @@ export function Dashboard() {
                 <Link to={decisionsLink} className="block h-full transition-transform hover:scale-105">
                     <Card className="h-full cursor-pointer hover:shadow-lg transition-shadow">
                         <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-center sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
-                            <div className="rounded-full bg-blue-100 p-2 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 sm:p-3 lg:p-4">
-                                <Gavel className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
+                            <div className="shrink-0 text-blue-600 dark:text-blue-400">
+                                <Gavel className="h-5 w-5" />
                             </div>
                             <div className="min-w-0">
                                 <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">{t('pages.dashboard.activeDecisions')}</p>
@@ -1586,8 +1586,8 @@ export function Dashboard() {
 
                 <Card>
                     <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-center sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
-                        <div className={`rounded-full p-2 sm:p-3 lg:p-4 ${lapiStatusTone.background}`}>
-                            <Activity className={`h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8 ${lapiStatusTone.icon}`} />
+                        <div className="shrink-0">
+                            <Activity className={`h-5 w-5 ${lapiStatusTone.icon}`} />
                         </div>
                         <div className="min-w-0">
                             <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">
