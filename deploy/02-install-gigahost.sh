@@ -152,7 +152,7 @@ ProtectHome=yes
 ProtectControlGroups=yes
 ProtectKernelTunables=yes
 CapabilityBoundingSet=CAP_NET_ADMIN
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
 ReadWritePaths=/var/lib/4n6-country-agent /run
 [Install]
 WantedBy=multi-user.target
@@ -171,7 +171,7 @@ NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 CapabilityBoundingSet=CAP_NET_ADMIN
-RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
 ReadWritePaths=/var/lib/4n6-country-agent /run
 UNIT
 cat > /etc/systemd/system/4n6-country-refresh.timer <<'UNIT'
