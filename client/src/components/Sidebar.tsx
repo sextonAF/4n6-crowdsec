@@ -173,6 +173,7 @@ export function Sidebar({ isOpen, onClose, onToggle, replaceOnNavigate = false, 
         ...(showStatisticsNav ? [{ to: "/statistics", label: "pages.statistics.title", icon: ChartLine }] : []),
         ...(showMetricsNav ? [{ to: "/metrics", label: "components.sidebar.nav.metrics", icon: BarChart3 }] : []),
         { to: "/country-blocking", label: "Country Blocking", icon: Globe2 },
+        { to: "/banned-ips", label: "Banned IPs", icon: Gavel },
         { to: "/notifications", label: "components.sidebar.nav.notifications", icon: Bell },
         { to: "/settings", label: "components.sidebar.nav.settings", icon: SettingsIcon },
     ];
