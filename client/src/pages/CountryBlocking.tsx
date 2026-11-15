@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Globe2, RefreshCw, Search, Server, ShieldBan } from 'lucide-react';
+import { AlertTriangle, Globe2, Search, Server, ShieldBan } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { fetchConfig } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,9 +34,6 @@ export function CountryBlocking() {
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
   const [notice,setNotice] = useState('');
-  const [preview,setPreview] = useState<Preview|null>(null);
-  const [confirmedSelection,setConfirmedSelection] = useState('');
-  const signature = [...selected].sort().join(',');
   const ready = !!status && status.mode === 'enforcement';
   const matches = useMemo(() => COUNTRIES.filter((country) =>
     country.name.toLowerCase().includes(search.trim().toLowerCase()) ||
@@ -63,30 +60,28 @@ export function CountryBlocking() {
 
   const toggle = (code:string) => {
     setSelected((current)=>current.includes(code)?current.filter(x=>x!==code):[...current,code]);
-    setPreview(null);setConfirmedSelection('');setNotice('');
-  };
-  const review = async () => {
-    if (!instance || !ready) return;
-    setBusy(true);setError('');setNotice('');
-    try {
-      const result=await agentCall<Preview>(instance,'preview',[...selected].sort());
-      if(result.server_id!==instance || !result.dry_run || result.applied) throw new Error('Invalid agent preview response');
-      setPreview(result);setConfirmedSelection(signature);
-    } catch (reason) {setError(reason instanceof Error?reason.message:'Preview failed');}
-    finally {setBusy(false);}
+    setNotice('');
   };
   const apply = async () => {
-    if(!instance || !ready || !preview || confirmedSelection!==signature || user?.role!=='admin')return;
+    if(!instance || !ready || user?.role!=='admin' || busy)return;
+    const countries=[...selected].sort();
+    const expected=countries.join(',');
     const name=instances.find(x=>x.id===instance)?.name||instance;
-    if(!window.confirm(`Apply inbound country restrictions on ${name}?\n\n${selected.length?selected.map(code=>COUNTRIES.find(c=>c.code===code)?.name||code).join(', '):'REMOVE ALL COUNTRY BLOCKS'}\n\nThis affects all inbound ports, including SSH.`))return;
     setBusy(true);setError('');setNotice('');
     try {
-      const result=await agentCall<AgentStatus>(instance,'apply',[...selected].sort());
+      // Keep dry-run validation, but run it automatically on Apply.
+      const preview=await agentCall<Preview>(instance,'preview',countries);
+      if(preview.server_id!==instance || !preview.dry_run || preview.applied ||
+         [...preview.countries].sort().join(',')!==expected) {
+        throw new Error('Invalid agent preview response');
+      }
+      if(!window.confirm(`Apply inbound country restrictions on ${name}?\n\n${countries.length?countries.map(code=>COUNTRIES.find(c=>c.code===code)?.name||code).join(', '):'REMOVE ALL COUNTRY BLOCKS'}\n\nThis affects all inbound ports, including SSH.`))return;
+      const result=await agentCall<AgentStatus>(instance,'apply',countries);
       if(result.server_id!==instance || !result.applied) throw new Error('Agent did not confirm enforcement');
       const verified=await agentCall<AgentStatus>(instance,'status');
       if(verified.server_id!==instance || !verified.applied ||
-         [...verified.countries].sort().join(',')!==signature) throw new Error('Applied policy failed verification');
-      setStatus(verified);setSelected(verified.countries);setPreview(null);setConfirmedSelection('');
+         [...verified.countries].sort().join(',')!==expected) throw new Error('Applied policy failed verification');
+      setStatus(verified);setSelected(verified.countries);
       setNotice('Country policy applied and verified on the selected server.');
     } catch(reason){setError(reason instanceof Error?reason.message:'Apply failed — verify server status');}
     finally {setBusy(false);}
@@ -101,7 +96,7 @@ export function CountryBlocking() {
     {notice && <div role="status" className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-100">{notice}</div>}
     <Card><CardHeader><CardTitle className="flex items-center gap-2"><Server className="h-5 w-5"/> Server</CardTitle></CardHeader>
       <CardContent><label className="mb-2 block text-sm font-medium" htmlFor="country-target">Select server</label>
-        <select id="country-target" value={instance} disabled={busy||!instances.length} onChange={e=>{setStatus(null);setSelected([]);setPreview(null);setConfirmedSelection('');setError('');setNotice('');setInstance(e.target.value);}}
+        <select id="country-target" value={instance} disabled={busy||!instances.length} onChange={e=>{setStatus(null);setSelected([]);setError('');setNotice('');setInstance(e.target.value);}}
           className="w-full max-w-md rounded border border-gray-300 bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white">
           {!instances.length && <option value="">No configured servers</option>}
           {instances.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}
@@ -133,13 +128,8 @@ export function CountryBlocking() {
       <p className="text-sm text-gray-600 dark:text-gray-300">
         {selected.length ? selected.map(code=>COUNTRIES.find(country=>country.code===code)?.name||code).join(', ') : 'No countries selected — applying this selection removes all country blocks.'}
       </p>
-      {preview && confirmedSelection===signature && <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-        Verified preview: {preview.counts.ipv4.toLocaleString()} IPv4 ranges and {preview.counts.ipv6.toLocaleString()} IPv6 ranges.
-      </p>}
       <div className="mt-4 flex flex-wrap gap-3">
-        <button type="button" onClick={review} disabled={busy||!ready||user?.role!=='admin'}
-          className="inline-flex items-center gap-2 rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"><RefreshCw className="h-4 w-4"/> Preview changes</button>
-        <button type="button" onClick={apply} disabled={busy||!ready||!preview||confirmedSelection!==signature||user?.role!=='admin'}
+        <button type="button" onClick={apply} disabled={busy||!ready||user?.role!=='admin'}
           className="rounded bg-red-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-40">
           {busy?'Processing…':'Apply to server'}
         </button>
