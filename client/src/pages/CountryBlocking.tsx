@@ -92,8 +92,20 @@ export function CountryBlocking() {
       <div><h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Country Blocking</h1>
       <p className="text-sm text-gray-500">Block selected countries across all inbound ports, IPv4 and IPv6.</p></div>
     </div>
-    {error && <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100">{error}</div>}
-    {notice && <div role="status" className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm text-green-900 dark:border-green-800 dark:bg-green-950 dark:text-green-100">{notice}</div>}
+    {(error || notice) && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="presentation">
+      <div role={error ? 'alertdialog' : 'dialog'} aria-modal="true" aria-labelledby="country-message-title"
+        aria-describedby="country-message-text"
+        className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+        <h2 id="country-message-title" className="text-lg font-semibold text-gray-900 dark:text-white">
+          {error ? 'Country Blocking Error' : 'Country Blocking'}
+        </h2>
+        <p id="country-message-text" className="mt-3 text-sm text-gray-700 dark:text-gray-200">{error || notice}</p>
+        <div className="mt-5 flex justify-end">
+          <button type="button" autoFocus onClick={() => {setError('');setNotice('');}}
+            className="rounded-lg bg-primary-600 px-5 py-2 text-sm font-medium text-white">OK</button>
+        </div>
+      </div>
+    </div>}
     <Card><CardHeader><CardTitle className="flex items-center gap-2"><Server className="h-5 w-5"/> Server</CardTitle></CardHeader>
       <CardContent><label className="mb-2 block text-sm font-medium" htmlFor="country-target">Select server</label>
         <select id="country-target" value={instance} disabled={busy||!instances.length} onChange={e=>{setStatus(null);setSelected([]);setError('');setNotice('');setInstance(e.target.value);}}
