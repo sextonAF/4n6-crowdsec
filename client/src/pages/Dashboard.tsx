@@ -1511,12 +1511,11 @@ export function Dashboard() {
                 <Link to={alertsLink} className="block h-full transition-transform hover:scale-105">
                     <Card className="h-full cursor-pointer hover:shadow-lg transition-shadow">
                         <CardContent className="p-3 sm:p-4 lg:p-6">
-                            
                             <div className="min-w-0 w-full text-left">
                                 <div className="flex items-center gap-3">
                                     <div className="shrink-0 text-red-600 dark:text-red-400">
                                         <ShieldAlert className="h-5 w-5" />
-                                        </div>
+                                </div>
                                     <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">{t('pages.dashboard.totalAlerts')}</p>
                                 </div>
                                 <div className="flex items-baseline justify-center gap-1 sm:justify-start sm:gap-2">
@@ -1552,12 +1551,11 @@ export function Dashboard() {
                 <Link to={decisionsLink} className="block h-full transition-transform hover:scale-105">
                     <Card className="h-full cursor-pointer hover:shadow-lg transition-shadow">
                         <CardContent className="p-3 sm:p-4 lg:p-6">
-                            
                             <div className="min-w-0 w-full text-left">
                                 <div className="flex items-center gap-3">
                                     <div className="shrink-0 text-blue-600 dark:text-blue-400">
                                         <Gavel className="h-5 w-5" />
-                                        </div>
+                                </div>
                                     <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">{t('pages.dashboard.activeDecisions')}</p>
                                 </div>
                                 <div className="flex items-baseline justify-center gap-1 sm:justify-start sm:gap-2">
@@ -1592,12 +1590,11 @@ export function Dashboard() {
 
                 <Card>
                     <CardContent className="p-3 sm:p-4 lg:p-6">
-                        
                         <div className="min-w-0 w-full text-left">
                             <div className="flex items-center gap-3">
                                     <div className="shrink-0">
                                         <Activity className={`h-5 w-5 ${lapiStatusTone.icon}`} />
-                                        </div>
+                                </div>
                                     <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">
                                 {t(isAllInstancesScope ? 'pages.dashboard.crowdsecLapis' : 'pages.dashboard.crowdsecLapi')}
                             </p>
