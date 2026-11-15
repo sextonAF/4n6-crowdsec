@@ -687,7 +687,7 @@ export function Dashboard() {
     useEffect(() => {
         let cancelled=false;
         const servers=config?.instances||[];
-        if(!servers.length){setBlockedCountryCodes([]);return;}
+        if(!servers.length)return;
         void Promise.all(servers.map(async server=>{
             try {
                 const response=await sessionFetch(apiUrl(`/api/country-blocking/${encodeURIComponent(server.id)}/status`));
