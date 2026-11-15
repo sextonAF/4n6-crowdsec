@@ -2297,6 +2297,10 @@ export function Alerts() {
 
             {canManageEnforcement && (
                 <div className="flex items-center gap-3">
+                    <Link to="/decisions?q=type%3Aban%20AND%20status%3Aactive"
+                        className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
+                        Banned IPs / Remove bans
+                    </Link>
                     <button
                         onClick={() => {
                             setPendingDeleteErrorInfo(null);
