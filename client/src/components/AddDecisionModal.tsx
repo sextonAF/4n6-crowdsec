@@ -362,7 +362,7 @@ export function AddDecisionModal({
                     />
                     <p className="text-xs text-gray-500 mt-1">{t('pages.decisions.durationHint')}</p>
                 </div>}
-                {scenarioOptions.length > 1 && (
+                {!managedBan && scenarioOptions.length > 1 && (
                     <div>
                         <label htmlFor="add-decision-scenario" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tableColumns.scenario')}</label>
                         <select
