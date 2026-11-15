@@ -1611,8 +1611,8 @@ export function Dashboard() {
             <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                 <Link to="/banned-ips" className="block h-full">
                     <Card className="h-full hover:shadow-lg">
-                        <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-center sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
-                            <div className="shrink-0 text-red-600"><ShieldBan className="h-5 w-5" /></div>
+                        <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-start sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
+                            <div className="mt-0.5 shrink-0 text-red-600"><ShieldBan className="h-5 w-5" /></div>
                             <div className="min-w-0">
                                 <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">Total banned IPs</p>
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white sm:text-2xl">{activeBanDecisions===null?'—':activeBanDecisions.toLocaleString()}</h3>
@@ -1623,8 +1623,8 @@ export function Dashboard() {
                 </Link>
                 <Link to="/country-blocking" className="block h-full">
                     <Card className="h-full hover:shadow-lg">
-                        <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-center sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
-                            <div className="shrink-0 text-blue-600"><Globe2 className="h-5 w-5" /></div>
+                        <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-start sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
+                            <div className="mt-0.5 shrink-0 text-blue-600"><Globe2 className="h-5 w-5" /></div>
                             <div className="min-w-0">
                                 <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">Total banned countries</p>
                                 <h3 className="text-lg font-bold text-gray-900 dark:text-white sm:text-2xl">{blockedCountryCodes.length.toLocaleString()}</h3>
@@ -1634,8 +1634,8 @@ export function Dashboard() {
                     </Card>
                 </Link>
                 <Card>
-                    <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-center sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
-                        <div className="shrink-0 text-orange-600"><ShieldAlert className="h-5 w-5" /></div>
+                    <CardContent className="flex flex-col items-center gap-2 p-3 text-center sm:flex-row sm:items-start sm:gap-3 sm:p-4 sm:text-left lg:gap-4 lg:p-6">
+                        <div className="mt-0.5 shrink-0 text-orange-600"><ShieldAlert className="h-5 w-5" /></div>
                         <div className="min-w-0">
                             <p className="text-[11px] font-medium leading-tight text-gray-500 dark:text-gray-400 sm:text-sm">Attacks from banned (7 days)</p>
                             <h3 className="text-lg font-bold text-gray-900 dark:text-white sm:text-2xl">—</h3>
