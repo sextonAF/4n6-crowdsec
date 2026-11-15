@@ -15,13 +15,13 @@ from .policy import PolicyValidationError, parse_feed, validate_country
 from .nft_rules import TABLE, render_replace, render_disable, validate_policy
 
 SOURCE = "https://raw.githubusercontent.com/ipverse/geo-ip-blocks/master/country"
-MAX_COUNTRIES = 30
+MAX_COUNTRIES = 249
 MAX_DOWNLOAD = 16 * 1024 * 1024
 REFRESH_HOURS = 24
 
 def normalize_countries(value):
     if not isinstance(value, list) or len(value) > MAX_COUNTRIES:
-        raise PolicyValidationError("Expected an array of at most 30 countries")
+        raise PolicyValidationError("Expected an array of at most 249 countries")
     if any(not isinstance(x, str) for x in value):
         raise PolicyValidationError("Country code must be a string")
     result = [validate_country(x) for x in value]

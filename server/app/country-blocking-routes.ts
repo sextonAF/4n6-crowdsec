@@ -54,7 +54,7 @@ export function registerCountryBlockingRoutes(deps: {
         return c.json({error:'Expected countries array'},400);
       }
       const list = (body as {countries:unknown}).countries;
-      if (!Array.isArray(list) || list.length > 30 ||
+      if (!Array.isArray(list) || list.length > 249 ||
           list.some((x) => typeof x !== 'string' || !/^[A-Z]{2}$/.test(x)) ||
           new Set(list).size !== list.length) {
         return c.json({error:'Invalid countries'},400);
