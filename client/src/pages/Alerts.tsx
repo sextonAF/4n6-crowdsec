@@ -2046,8 +2046,8 @@ export function Alerts() {
                                 openAlertDecision(alert);
                             }}
                             className="text-primary-600 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors p-2 rounded-full relative z-10 cursor-pointer"
-                            title={t('pages.decisions.addDecision')}
-                            aria-label={t('pages.decisions.addDecision')}
+                            title="Ban IP"
+                            aria-label="Ban IP"
                         >
                             <Gavel size={16} aria-hidden="true" />
                         </button>
@@ -2297,9 +2297,9 @@ export function Alerts() {
 
             {canManageEnforcement && (
                 <div className="flex items-center gap-3">
-                    <Link to="/decisions?q=type%3Aban%20AND%20status%3Aactive"
+                    <Link to="/banned-ips"
                         className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200">
-                        Banned IPs / Remove bans
+                        Banned IPs
                     </Link>
                     <button
                         onClick={() => {
