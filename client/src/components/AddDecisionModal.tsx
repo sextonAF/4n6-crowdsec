@@ -325,17 +325,26 @@ export function AddDecisionModal({
                     </div>
                 ) : (
                 <div>
-                    <label htmlFor="add-decision-ip" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tableColumns.source')}</label>
-                    <input
-                        id="add-decision-ip"
-                        type="text"
-                        required
-                        disabled={inProgress || confirmIp}
-                        className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        placeholder="1.2.3.4"
-                        value={decision.ip}
-                        onChange={(event) => updateDecision({ ip: event.target.value })}
-                    />
+                    {confirmIp ? (
+                        <>
+                            <p className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Confirm the IP address to ban</p>
+                            <p className="rounded-md border border-gray-200 bg-gray-50 px-3 py-3 font-mono text-base font-semibold text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white">{decision.ip}</p>
+                        </>
+                    ) : (
+                        <>
+                            <label htmlFor="add-decision-ip" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('tableColumns.source')}</label>
+                            <input
+                                id="add-decision-ip"
+                                type="text"
+                                required
+                                disabled={inProgress}
+                                className="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 dark:text-gray-100 text-gray-900 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                                placeholder="1.2.3.4"
+                                value={decision.ip}
+                                onChange={(event) => updateDecision({ ip: event.target.value })}
+                            />
+                        </>
+                    )}
                 </div>
                 )}
                 {!managedBan && <div>
