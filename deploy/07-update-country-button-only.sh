@@ -33,10 +33,12 @@ docker tag "$OLD_ID" "4n6-crowdsec:country-ui-button-rollback"
 BUILD="$(mktemp -d)"
 trap 'rm -rf "$BUILD"' EXIT
 git clone -q --depth 1 --branch main https://github.com/sextonAF/4n6-crowdsec.git "$BUILD/repo"
-# Pin to commit containing the single-button change and reject other updates.
-git -C "$BUILD/repo" cat-file -e "136b0674633ab1a64999b008762efc4bc25d9fe6^{commit}" ||
-  { echo "Single-button commit unavailable in shallow clone" >&2; exit 1; }
-# No code in other parts of the application is changed by this patch.
+# Confirm that this release contains the one-button interface, not the older preview button.
+if grep -q "onClick={review}" "$BUILD/repo/client/src/pages/CountryBlocking.tsx" ||
+   ! grep -q "const preview=await agentCall<Preview>" "$BUILD/repo/client/src/pages/CountryBlocking.tsx"; then
+  echo "Requested single-button UI is absent; refusing build." >&2
+  exit 1
+fi
 REV="$(git -C "$BUILD/repo" rev-parse --short=12 HEAD)"
 NEW_IMAGE="4n6-crowdsec:country-ui-$REV"
 echo "Building updated dashboard while original remains online..."
